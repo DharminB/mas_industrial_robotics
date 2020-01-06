@@ -2,8 +2,8 @@
 <launch>
 
     <!-- arguments -->
-    <arg name="domain_path"    default="$(find mir_task_planning)/common/pddl/domain.pddl" />
-    <arg name="problem_path" default="$(find mir_task_planning)/common/pddl/smaller_problem.pddl" />
+    <arg name="domain_path" default="$(find rosplan_planning_system)/test/pddl/turtlebot/domain.pddl" />
+    <arg name="problem_path" default="$(find rosplan_planning_system)/test/pddl/turtlebot/initial_state_problem.pddl" />
     <arg name="generated_problem_path" default="$(find mir_task_planning)/common/pddl/generated_problem.pddl" />
     <arg name="database_path" default="$(find mir_knowledge)/common/mongoDB/" />
     <arg name="data_path" default="/tmp/" />
@@ -34,28 +34,22 @@
         <arg name="db_path" value="$(arg database_path)"/>
     </include>
 
+  <include file="$(find rosplan_planning_system)/launch/includes/planner_interface.launch">
+    <arg name="use_problem_topic"    value="true" />
+    <arg name="problem_topic"        value="/rosplan_problem_interface/problem_instance" />
+    <arg name="planner_topic"        value="planner_output" />
+    <arg name="domain_path"          value="$(arg domain_path)" />
+    <arg name="problem_path"         value="$(arg generated_problem_path)" />
+    <arg name="data_path"            value="$(arg data_path)" />
+    <arg name="planner_command"      value="timeout 10 $(find rosplan_planning_system)/common/bin/popf DOMAIN PROBLEM" />
+  </include>
 
-    <!-- planner interface -->
-    <node pkg="rosplan_planning_system" name="rosplan_planner_interface"
-          type="lama_planner_interface" respawn="false" output="screen" >
-        <param name="use_problem_topic" value="true" />
-        <param name="problem_topic"     value="/rosplan_problem_interface/problem_instance" />
-        <param name="planner_topic"     value="planner_output" />
-        <param name="domain_path"       value="$(arg domain_path)" />
-        <param name="problem_path"      value="$(arg generated_problem_path)" />
-        <param name="data_path"         value="$(arg data_path)" />
-        <param name="planner_command"   value="$(find lama_planner)/build/LAMA/fast-downward.py --search-time-limit $(arg search_time_limit) --alias seq-sat-lama-2011 DOMAIN PROBLEM" />
-    </node>
-
-
-    <!-- parse generated plan -->
     <node pkg="rosplan_planning_system" name="rosplan_parsing_interface"
-          type="pddl_lama_plan_parser" respawn="false" output="screen">
+          type="pddl_simple_plan_parser" respawn="false" output="screen">
         <param name="knowledge_base" value="rosplan_knowledge_base" />
         <param name="planner_topic"  value="/rosplan_planner_interface/planner_output" />
         <param name="plan_topic"     value="complete_plan" />
     </node>
-
 
     <!-- plan dispatching -->
     <node pkg="rosplan_planning_system" name="rosplan_plan_dispatcher"
@@ -68,6 +62,25 @@
 
 
     <!-- sim actions -->
-    <include file="$(find mir_task_planning)/ros/launch/mock_actions.launch" />
+    <include file="$(find rosplan_planning_system)/launch/includes/simulated_action.launch" >
+        <arg name="pddl_action_name" value="undock" />
+        <arg name="action_probability" value="0.9" />
+        <arg name="action_duration" value="2.0" />
+    </include>
+    <include file="$(find rosplan_planning_system)/launch/includes/simulated_action.launch" >
+        <arg name="pddl_action_name" value="dock" />
+        <arg name="action_probability" value="0.9" />
+        <arg name="action_duration" value="2.0" />
+    </include>
+    <include file="$(find rosplan_planning_system)/launch/includes/simulated_action.launch" >
+        <arg name="pddl_action_name" value="localise" />
+        <arg name="action_probability" value="0.9" />
+        <arg name="action_duration" value="2.0" />
+    </include>
+    <include file="$(find rosplan_planning_system)/launch/includes/simulated_action.launch" >
+        <arg name="pddl_action_name" value="goto_waypoint" />
+        <arg name="action_probability" value="0.9" />
+        <arg name="action_duration" value="2.0" />
+    </include>
 
 </launch>
